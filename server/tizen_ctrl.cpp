@@ -1283,6 +1283,7 @@ int TizenCtrlPointStart(print_string printFunctionPtr, state_update updateFuncti
 			 ip_address ? ip_address : "{NULL}", port);
 	SampleUtil_Print("Registering Control Point\n");
 
+	UpnpSetWebServerRootDir("./web");
 
 // write server system ipaddr & port
 	if(fp)
