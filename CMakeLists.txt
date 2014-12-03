@@ -1,6 +1,6 @@
 # Reqired CMake version and project name
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
-PROJECT(upnp-framework)
+PROJECT(upnp-server)
 
 SET(PREFIX ${CMAKE_INSTALL_PREFIX})
 SET(EXEC_PREFIX "\${prefix}")
