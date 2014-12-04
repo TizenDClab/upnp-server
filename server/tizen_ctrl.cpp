@@ -60,6 +60,15 @@ const char TizenDeviceType[] = "urn:schemas-upnp-org:device:tizen:1";
 /*! Service names.*/
 const char *TizenServiceName[] = { "Control", "Picture" };
 
+#ifdef X86
+const char *TizenWebRoot = "../web";
+#else
+const char *TizenWebRoot = "/usr/share/web";
+#endif
+const char *TizenUrlFile = "/tmp/my_url.txt";
+const char *TizenFilename = "/tmp/my_filename.txt";
+unsigned short port = 0;
+char *ip_address = NULL;
 /*!
    Global arrays for storing variable names and counts for 
    TizenControl and TizenPicture services 
@@ -425,8 +434,6 @@ int TizenCtrlPointSendActionTextArg(int devnum, int service,
 	char *param_val = param_val_a;
 
 	sprintf(param_val_a, "%s", paramText);
-//	printf("Service:%d, devnum:%d actionName:%s paramName:%s param_val:%s \n", 
-//			service, devnum, actionName, paramName, &param_val);
 	return TizenCtrlPointSendAction(
 		service, devnum, actionName, &paramName,
 		&param_val, 1);
@@ -902,7 +909,7 @@ void TizenStateUpdate(char *UDN, int Service, IXML_Document *ChangedVariables,
 }
 
 /********************************************************************************
- * TizenCtrlPointHandleEvent
+ * /TizenCtrlPointHandleEvent
  *
  * Description: 
  *       Handle a UPnP event that was received.  Process the event and update
@@ -1248,11 +1255,12 @@ int TizenCtrlPointStart(print_string printFunctionPtr, state_update updateFuncti
 {
 	ithread_t timer_thread;
 	int rc;
-	unsigned short port = 0;
-	char *ip_address = NULL;
+	/*
+	*/
 	
-	FILE * fp = fopen("server_system.txt", "w+");
+	FILE * fp = NULL;
 
+__init_retry :
 	SampleUtil_Initialize(printFunctionPtr);
 	SampleUtil_RegisterUpdateFunction(updateFunctionPtr);
 
@@ -1267,6 +1275,8 @@ int TizenCtrlPointStart(print_string printFunctionPtr, state_update updateFuncti
 		SampleUtil_Print("WinCEStart: UpnpInit() Error: %d\n", rc);
 		if (!combo) {
 			UpnpFinish();
+			sleep(1);
+			goto __init_retry;
 
 			return TIZEN_ERROR;
 		}
@@ -1283,21 +1293,12 @@ int TizenCtrlPointStart(print_string printFunctionPtr, state_update updateFuncti
 			 ip_address ? ip_address : "{NULL}", port);
 	SampleUtil_Print("Registering Control Point\n");
 
-	UpnpSetWebServerRootDir("./web");
+	UpnpSetWebServerRootDir(TizenWebRoot);
 
 // write server system ipaddr & port
-	if(fp)
-	{
-		fwrite("ipaddr", strlen("ipaddr"), 1, fp);
-		fputc('\t', fp);
-		fwrite(ip_address, strlen(ip_address), 1, fp);
-		fputc('\n', fp);
-		fwrite("port ", strlen("port"), 1, fp);
-		fputc('\t', fp);
-		fprintf(fp, "%d", port);
-		fputc('\n', fp);
-		fclose(fp);
-	}
+	fp = fopen(TizenUrlFile, "w");
+	rc = fprintf(fp, "http://%s:%d/%s/", ip_address, port, TizenWebRoot);
+	fclose(fp);
 
 	rc = UpnpRegisterClient(TizenCtrlPointCallbackEventHandler,
 				&ctrlpt_handle, &ctrlpt_handle);
@@ -1515,40 +1516,48 @@ void TizenCtrlPointPrintCommands(void)
 void *TizenCtrlPointCommandLoop(void *args)
 {
 	char cmdline[100];
-	int idx, cnt=0;
+	char str_fullpath[256] = {'\0'};
+	char *filename;
 	int devnum = 0;
 	struct TizenDeviceNode *tmpdevnode = NULL;
 	
-	
 	int filereadlength=0;
-	char filename[100] = {'\0'};
+	char str_url[256] = {'\0'}; 
+	char str_url2[256] = {'\0'}; 
+	
 	
 	while (1) {
-		//		SampleUtil_Print("\n>> ");
-		//		printf("[OCS] loop cnt : %d", cnt);
-		//		fgets(cmdline, 100, stdin);
-		//		TizenCtrlPointProcessCommand(cmdline);
-
-		FILE * fp = fopen("filename.txt", "r");
-		if(fp==NULL) 
-		{
+		FILE * fp = fopen(TizenFilename, "r");
+		if(fp==NULL) {
 			printf("[OCS] File open fail!\n");
+			goto __next_period;
 		}
-		else
-		{
-			filereadlength = fread(filename, 50, 1, fp);
-			filename[strlen(filename)-1] = '\0';
-			fclose(fp);
+
+		fscanf(fp, "%s", str_fullpath);
+		fclose(fp);
+
+		filename = rindex(str_fullpath, '/');
+		if(filename == NULL) 
+			filename = str_fullpath;
+		else 
+			filename++;
+
+		sprintf(str_url, "%s/%s", TizenWebRoot, filename);
+		if(symlink(str_fullpath, str_url) < 0) {
+			unlink(str_url);
+			symlink(str_fullpath, str_url);
 		}
-		printf("[OCS] filename : %s, cnt : %d\n", filename, cnt);
+		sprintf(str_url2, "http://%s:%d/%s", ip_address, port, filename);
+		printf("[OCS] filename : %s\n", str_url2);
 
 		devnum = 1;
 		tmpdevnode = GlobalDeviceList;
 		while(tmpdevnode) {
-			TizenCtrlPointSendActionTextArg(devnum++, TIZEN_SERVICE_PICTURE, "SendText", "Text", filename);
+			TizenCtrlPointSendActionTextArg(devnum++, TIZEN_SERVICE_PICTURE, "SendText", "Text", str_url2);
 			tmpdevnode = tmpdevnode->next;
 		}
 
+__next_period :
 		sleep(1);
 	}
 
