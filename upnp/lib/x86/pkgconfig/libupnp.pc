@@ -1,4 +1,4 @@
-prefix=/home/sejun/Downloads/tizen/upnp/libupnp-1.6.19/..
+prefix=/home/sejun/Courses/2014-02/tizen
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include

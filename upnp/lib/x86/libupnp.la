@@ -17,7 +17,7 @@ old_library='libupnp.a'
 inherited_linker_flags=' -pthread'
 
 # Libraries that this one depends upon.
-dependency_libs=' /../lib/libthreadutil.la /../lib/libixml.la'
+dependency_libs=' /home/sejun/Courses/2014-02/tizen/lib/libthreadutil.la /home/sejun/Courses/2014-02/tizen/lib/libixml.la'
 
 # Names of additional weak libraries provided by this library
 weak_library_names=''
@@ -38,4 +38,4 @@ dlopen=''
 dlpreopen=''
 
 # Directory that this library needs to be installed in:
-libdir='/../lib'
+libdir='/home/sejun/Courses/2014-02/tizen/lib'
