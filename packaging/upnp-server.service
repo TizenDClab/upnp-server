@@ -1,6 +1,5 @@
 [Unit]
 Description=Start the remote key framework
-After=load-virtual-homekey.service bluetooth.service
 
 [Service]
 #You can the name of bluetooth device by changing the parameter to upnp_server.

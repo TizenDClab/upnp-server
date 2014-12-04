@@ -28,9 +28,9 @@ SRCS = server_main.c sample_util.c tizen_ctrl.c
 
 CC = g++
 INCS = -I$(PWD)/../upnp/include
-LIBRARY_DIR = $(PWD)/../upnp/lib
+LIBRARY_DIR = $(PWD)/../upnp/lib/x86
 LIBRARIES = -lupnp -lthreadutil -lpthread -lixml
-CFLAGS = -g -c $(INCS) -DTIZEN 
+CFLAGS = -g -c $(INCS) -DTIZEN -DX86
 CPPFLAGS= $(CFLAGS)
 
 SERVER = server
